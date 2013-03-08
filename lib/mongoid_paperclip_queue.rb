@@ -7,7 +7,7 @@ end
 
 module Mongoid::PaperclipQueue
   class Queue
-    extend Resque::Plugins::Retry
+    extend ::Resque::Plugins::Retry
 
     @queue = "#{Rails.env}_paperclip".to_sym
 
