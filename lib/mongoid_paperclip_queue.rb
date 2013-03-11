@@ -1,3 +1,5 @@
+require 'resque-retry'
+require 'resque/failure/redis'
 begin
   require "paperclip"
 rescue LoadError
@@ -6,10 +8,26 @@ rescue LoadError
 end
 
 module Mongoid::PaperclipQueue
+  @@failure_classes = [Resque::Failure::Redis]
+
+  def self.load_extra_failure_classes(failure_classes)
+    @@failure_classes += failure_classes
+
+    Resque::Failure::MultipleWithRetrySuppression.classes = self.failure_classes
+    Resque::Failure.backend = Resque::Failure::MultipleWithRetrySuppression
+  end
+
+  def self.failure_classes
+    @@failure_classes
+  end
 
   class Queue
+    extend Resque::Plugins::Retry
 
     @queue = "#{Rails.env}_paperclip".to_sym
+
+    @retry_limit = 5
+    @retry_delay = 120
 
     def self.enqueue(klass,field,id,*parents)
       ::Resque.enqueue(self,klass,field,id,*parents)
