@@ -12,6 +12,9 @@ module Mongoid::PaperclipQueue
 
   def self.load_extra_failure_classes(failure_classes)
     @@failure_classes += failure_classes
+
+    Resque::Failure::MultipleWithRetrySuppression.classes = self.failure_classes
+    Resque::Failure.backend = Resque::Failure::MultipleWithRetrySuppression
   end
 
   def self.failure_classes
@@ -178,6 +181,3 @@ module Paperclip
   end
 
 end
-
-Resque::Failure::MultipleWithRetrySuppression.classes = Mongoid::PaperclipQueue.failure_classes
-Resque::Failure.backend = Resque::Failure::MultipleWithRetrySuppression
