@@ -1,4 +1,5 @@
 require 'resque-retry'
+require 'resque/failure/redis'
 begin
   require "paperclip"
 rescue LoadError
@@ -7,6 +8,16 @@ rescue LoadError
 end
 
 module Mongoid::PaperclipQueue
+  @@failure_classes = [Resque::Failure::Redis]
+
+  def self.load_extra_failure_classes(failure_classes)
+    @@failure_classes += failure_classes
+  end
+
+  def self.failure_classes
+    @@failure_classes
+  end
+
   class Queue
     extend Resque::Plugins::Retry
 
@@ -168,6 +179,5 @@ module Paperclip
 
 end
 
-require 'resque/failure/redis'
-Resque::Failure::MultipleWithRetrySuppression.classes = [Resque::Failure::Redis]
+Resque::Failure::MultipleWithRetrySuppression.classes = Mongoid::PaperclipQueue.failure_classes
 Resque::Failure.backend = Resque::Failure::MultipleWithRetrySuppression
